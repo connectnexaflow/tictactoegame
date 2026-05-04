@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Tic Tac Toe</title>
+    <link href="https://api.fontsource.org/v1/fonts/inter/latin.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a1a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(88, 28, 135, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(6, 182, 212, 0.2) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(236, 72, 153, 0.2) 0%, transparent 50%);
+            z-index: 0;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: var(--opacity); transform: scale(1); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .header {
+            text-align: center;
+            width: 100%;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a855f7, #ec4899, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.8rem;
+            margin-top: 2px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .user-badge:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a855f7, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .scoreboard {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .score-card {
+            flex: 1;
+            padding: 12px 8px;
+            border-radius: 14px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .score-card.active-x {
+            border-color: rgba(168, 85, 247, 0.4);
+            background: rgba(168, 85, 247, 0.06);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.1);
+        }
+
+        .score-card.active-o {
+            border-color: rgba(6, 182, 212, 0.4);
+            background: rgba(6, 182, 212, 0.06);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);
+        }
+
+        .score-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+        }
+
+        .score-x .score-label { color: #a855f7; }
+        .score-draw .score-label { color: rgba(255, 255, 255, 0.4); }
+        .score-o .score-label { color: #06b6d4; }
+
+        .score-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        .turn-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            min-height: 36px;
+        }
+
+        .turn-symbol {
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+
+        .turn-symbol.x-turn { color: #a855f7; }
+        .turn-symbol.o-turn { color: #06b6d4; }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1;
+            padding: 12px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .cell:active {
+            transform: scale(0.92);
+        }
+
+        .cell:not(.taken):hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .cell.taken {
+            cursor: default;
+        }
+
+        .cell.win-cell {
+            animation: winPulse 0.5s ease;
+        }
+
+        @keyframes winPulse {
+            0%, 100% { background: rgba(255, 255, 255, 0.04); }
+            50% { background: rgba(255, 255, 255, 0.15); }
+        }
+
+        .symbol {
+            font-size: 2.8rem;
+            font-weight: 900;
+            opacity: 0;
+            transform: scale(0) rotate(-20deg);
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .symbol.x { color: #a855f7; text-shadow: 0 0 20px rgba(168, 85, 247, 0.5); }
+        .symbol.o { color: #06b6d4; text-shadow: 0 0 20px rgba(6, 182, 212, 0.5); }
+
+        @keyframes popIn {
+            to { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: white;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-restart:hover {
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Auth Modal */
+        .auth-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            background: rgba(10, 10, 26, 0.85);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .auth-modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .auth-card {
+            width: 90%;
+            max-width: 360px;
+            padding: 24px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .auth-modal.show .auth-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .auth-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .auth-subtitle {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .auth-tab.active {
+            background: rgba(168, 85, 247, 0.3);
+            color: white;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-field {
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            outline: none;
+            width: 100%;
+        }
+
+        .input-field:focus {
+            border-color: rgba(168, 85, 247, 0.5);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .auth-btn {
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .auth-btn:hover {
+            box-shadow: 0 6px 25px rgba(168, 85, 247, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .auth-btn:active {
+            transform: scale(0.98);
+        }
+
+        .auth-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .auth-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .auth-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .auth-error {
+            color: #ef4444;
+            font-size: 0.8rem;
+            text-align: center;
+            min-height: 20px;
+            margin-top: 4px;
+        }
+
+        .guest-notice {
+            text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: 16px;
+        }
+
+        .guest-notice p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+        }
+
+        .guest-btn {
+            margin-top: 8px;
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .guest-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Winner Modal */
+        .winner-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 90;
+            background: rgba(10, 10, 26, 0.8);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .winner-modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .winner-content {
+            text-align: center;
+            transform: scale(0.8) translateY(20px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .winner-modal.show .winner-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .winner-emoji {
+            font-size: 3.5rem;
+            margin-bottom: 12px;
+            animation: bounce 1s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .winner-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 6px;
+        }
+
+        .winner-sub {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 89;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            animation: confettiFall var(--fall-duration) linear forwards;
+            opacity: 0;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(var(--rotation)); opacity: 0; }
+        }
+
+        .profile-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            width: 220px;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+        }
+
+        .profile-dropdown.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .profile-info {
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 12px;
+        }
+
+        .profile-name {
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        .profile-email {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            word-break: break-all;
+        }
+
+        .profile-btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .profile-btn-logout {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+
+        .profile-btn-logout:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .profile-btn-close {
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 8px;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-height: 700px) {
+            .container { gap: 12px; padding: 12px; }
+            .title { font-size: 1.6rem; }
+            .score-card { padding: 8px 6px; }
+            .score-value { font-size: 1.4rem; }
+            .board { max-width: 260px; gap: 6px; padding: 8px; border-radius: 16px; }
+            .cell { border-radius: 10px; }
+            .symbol { font-size: 2.2rem; }
+            .btn { padding: 10px 14px; }
+        }
+
+        @media (min-width: 500px) {
+            .board { max-width: 340px; }
+            .symbol { font-size: 3.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <div class="stars" id="stars"></div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div>
+                    <h1 class="title">Tic Tac Toe</h1>
+                    <p class="subtitle">Neon Edition</p>
+                </div>
+                <div class="user-badge" id="userBadge" style="display: none;">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <span class="user-email" id="userEmail"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="scoreboard">
+            <div class="score-card score-x active-x" id="scoreCardX">
+                <div class="score-label">Player X</div>
+                <div class="score-value" id="scoreX">0</div>
+            </div>
+            <div class="score-card score-draw">
+                <div class="score-label">Draws</div>
+                <div class="score-value" id="scoreDraw">0</div>
+            </div>
+            <div class="score-card score-o" id="scoreCardO">
+                <div class="score-label">Player O</div>
+                <div class="score-value" id="scoreO">0</div>
+            </div>
+        </div>
+
+        <div class="turn-indicator" id="turnIndicator">
+            <span class="turn-symbol x-turn" id="turnSymbol">X</span>
+            <span>turn</span>
+        </div>
+
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-restart" id="btnRestart">New Game</button>
+            <button class="btn btn-reset" id="btnReset">Reset Scores</button>
+            <button class="btn btn-reset" id="btnAuth">Sign In</button>
+        </div>
+    </div>
+
+    <div class="auth-modal" id="authModal">
+        <div class="auth-card" style="position: relative;">
+            <button class="auth-close" id="authClose">×</button>
+            <div class="auth-header">
+                <h2 class="auth-title">Welcome</h2>
+                <p class="auth-subtitle">Sign in to save your scores</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tabLogin">Login</button>
+                <button class="auth-tab" id="tabSignup">Sign Up</button>
+            </div>
+
+            <form class="auth-form" id="authForm">
+                <div class="input-group" id="nameGroup" style="display: none;">
+                    <label class="input-label">Display Name</label>
+                    <input type="text" class="input-field" id="inputName" placeholder="Your name" autocomplete="name">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Email</label>
+                    <input type="email" class="input-field" id="inputEmail" placeholder="you@example.com" autocomplete="email" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Password</label>
+                    <input type="password" class="input-field" id="inputPassword" placeholder="••••••••" autocomplete="current-password" required>
+                </div>
+                <div class="auth-error" id="authError"></div>
+                <button type="submit" class="auth-btn" id="authBtn">Login</button>
+            </form>
+
+            <div class="guest-notice">
+                <p>Or play without an account</p>
+                <button class="guest-btn" id="guestBtn">Continue as Guest</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="winner-modal" id="winnerModal">
+        <div class="winner-content">
+            <div class="winner-emoji" id="winnerEmoji">🎉</div>
+            <div class="winner-text" id="winnerText">Player X Wins!</div>
+            <div class="winner-sub" id="winnerSub">Click New Game to play again</div>
+            <button class="btn btn-restart" id="btnPlayAgain">Play Again</button>
+        </div>
+    </div>
+
+    <div class="confetti-container" id="confettiContainer"></div>
+
+    <div class="profile-dropdown" id="profileDropdown">
+        <div class="profile-info">
+            <div class="profile-name" id="profileName">User</div>
+            <div class="profile-email" id="profileEmail"></div>
+        </div>
+        <button class="profile-btn profile-btn-logout" id="btnLogout">🚪 Sign Out</button>
+        <button class="profile-btn profile-btn-close" id="btnCloseProfile">Close</button>
+    </div>
+
+    <script>
+        (function() {
+            // ==========================================
+            // CONFIGURATION - Replace with your Supabase credentials
+            // ==========================================
+            const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+            const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+            
+            let supabase;
+            let useSupabase = false;
+            
+            // Try to initialize Supabase
+            try {
+                if (window.supabase && SUPABASE_URL !== 'https://YOUR_PROJECT_ID.supabase.co') {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    useSupabase = true;
+                }
+            } catch (e) {
+                console.log('Supabase not configured, running in local mode');
+            }
+
+            // DOM Elements
+            const cells = document.querySelectorAll('.cell');
+            const userBadge = document.getElementById('userBadge');
+            const userAvatar = document.getElementById('userAvatar');
+            const userEmail = document.getElementById('userEmail');
+            const scoreCardX = document.getElementById('scoreCardX');
+            const scoreCardO = document.getElementById('scoreCardO');
+            const scoreXEl = document.getElementById('scoreX');
+            const scoreOEl = document.getElementById('scoreO');
+            const scoreDrawEl = document.getElementById('scoreDraw');
+            const btnRestart = document.getElementById('btnRestart');
+            const btnReset = document.getElementById('btnReset');
+            const btnAuth = document.getElementById('btnAuth');
+            const authModal = document.getElementById('authModal');
+            const authClose = document.getElementById('authClose');
+            const tabLogin = document.getElementById('tabLogin');
+            const tabSignup = document.getElementById('tabSignup');
+            const authForm = document.getElementById('authForm');
+            const inputName = document.getElementById('inputName');
+            const inputEmail = document.getElementById('inputEmail');
+            const inputPassword = document.getElementById('inputPassword');
+            const authError = document.getElementById('authError');
+            const authBtn = document.getElementById('authBtn');
+            const guestBtn = document.getElementById('guestBtn');
+            const winnerModal = document.getElementById('winnerModal');
+            const winnerEmoji = document.getElementById('winnerEmoji');
+            const winnerText = document.getElementById('winnerText');
+            const winnerSub = document.getElementById('winnerSub');
+            const btnPlayAgain = document.getElementById('btnPlayAgain');
+            const confettiContainer = document.getElementById('confettiContainer');
+            const profileDropdown = document.getElementById('profileDropdown');
+            const profileName = document.getElementById('profileName');
+            const profileEmail = document.getElementById('profileEmail');
+            const btnLogout = document.getElementById('btnLogout');
+            const btnCloseProfile = document.getElementById('btnCloseProfile');
+            const boardEl = document.getElementById('board');
+            const turnIndicator = document.getElementById('turnIndicator');
+            const turnSymbol = document.getElementById('turnSymbol');
+
+            // State
+            let board = Array(9).fill(null);
+            let currentPlayer = 'X';
+            let gameActive = true;
+            let scores = { X: 0, O: 0, draw: 0 };
+            let currentUser = null;
+            let isSignup = false;
+            let isProcessing = false;
+
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            // Generate stars background
+            function createStars() {
+                const starsContainer = document.getElementById('stars');
+                for (let i = 0; i < 60; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    star.style.left = Math.random() * 100 + '%';
+                    star.style.top = Math.random() * 100 + '%';
+                    star.style.setProperty('--duration', (2 + Math.random() * 4) + 's');
+                    star.style.setProperty('--opacity', (0.2 + Math.random() * 0.6));
+                    star.style.animationDelay = Math.random() * 4 + 's';
+                    starsContainer.appendChild(star);
+                }
+            }
+
+            function createConfetti() {
+                const colors = ['#a855f7', '#06b6d4', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
+                for (let i = 0; i < 50; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.setProperty('--fall-duration', (2 + Math.random() * 2) + 's');
+                    confetti.style.setProperty('--rotation', (360 + Math.random() * 720) + 'deg');
+                    confetti.style.animationDelay = Math.random() * 0.8 + 's';
+                    confetti.style.width = (6 + Math.random() * 8) + 'px';
+                    confetti.style.height = (6 + Math.random() * 8) + 'px';
+                    confettiContainer.appendChild(confetti);
+                }
+            }
+
+            function clearConfetti() {
+                confettiContainer.innerHTML = '';
+            }
+
+            function getInitials(email) {
+                if (!email) return 'U';
+                return email.substring(0, 2).toUpperCase();
+            }
+
+            function getUserDisplayName() {
+                if (currentUser) {
+                    return currentUser.user_metadata?.display_name || currentUser.email?.split('@')[0] || 'User';
+                }
+                return 'Guest';
+            }
+
+            // UI Updates
+            function updateTurnIndicator() {
+                turnSymbol.textContent = currentPlayer;
+                turnSymbol.className = 'turn-symbol ' + (currentPlayer === 'X' ? 'x-turn' : 'o-turn');
+                scoreCardX.className = 'score-card score-x' + (currentPlayer === 'X' ? ' active-x' : '');
+                scoreCardO.className = 'score-card score-o' + (currentPlayer === 'O' ? ' active-o' : '');
+            }
+
+            function updateScoresDisplay() {
+                scoreXEl.textContent = scores.X;
+                scoreOEl.textContent = scores.O;
+                scoreDrawEl.textContent = scores.draw;
+            }
+
+            function updateUserUI(user) {
+                if (user) {
+                    currentUser = user;
+                    userBadge.style.display = 'flex';
+                    userAvatar.textContent = getInitials(user.email);
+                    userEmail.textContent = user.email;
+                    profileName.textContent = getUserDisplayName();
+                    profileEmail.textContent = user.email;
+                    btnAuth.textContent = 'Sign Out';
+                    btnAuth.onclick = handleLogout;
+                    loadUserScores();
+                } else {
+                    currentUser = null;
+                    userBadge.style.display = 'none';
+                    btnAuth.textContent = 'Sign In';
+                    btnAuth.onclick = openAuthModal;
+                    resetLocalScores();
+                }
+            }
+
+            function resetLocalScores() {
+                scores = { X: 0, O: 0, draw: 0 };
+                updateScoresDisplay();
+            }
+
+            function openAuthModal() {
+                authModal.classList.add('show');
+                isSignup = false;
+                updateAuthTab();
+                authError.textContent = '';
+                inputEmail.value = '';
+                inputPassword.value = '';
+                inputName.value = '';
+            }
+
+            function closeAuthModal() {
+                authModal.classList.remove('show');
+            }
+
+            function updateAuthTab() {
+                tabLogin.classList.toggle('active', !isSignup);
+                tabSignup.classList.toggle('active', isSignup);
+                authBtn.textContent = isSignup ? 'Create Account' : 'Login';
+                document.getElementById('nameGroup').style.display = isSignup ? 'flex' : 'none';
+            }
+
+            async function handleAuth(e) {
+                e.preventDefault();
+                if (isProcessing) return;
+
+                const email = inputEmail.value.trim();
+                const password = inputPassword.value.trim();
+                const displayName = inputName.value.trim();
+
+                if (!email || !password) {
+                    authError.textContent = 'Please fill in all fields';
+                    return;
+                }
+
+                if (isSignup && password.length < 6) {
+                    authError.textContent = 'Password must be at least 6 characters';
+                    return;
+                }
+
+                isProcessing = true;
+                authBtn.disabled = true;
+                authBtn.innerHTML = '<div class="loading-spinner"></div>';
+                authError.textContent = '';
+
+                try {
+                    if (useSupabase) {
+                        let result;
+                        if (isSignup) {
+                            result = await supabase.auth.signUp({
+                                email,
+                                password,
+                                options: {
+                                    data: { display_name: displayName || email.split('@')[0] }
+                                }
+                            });
+                            if (result.error) throw result.error;
+                            
+                            if (result.data?.user?.identities?.length === 0) {
+                                authError.textContent = 'An account with this email already exists. Please login instead.';
+                                return;
+                            }
+                            
+                            authError.textContent = 'Check your email to confirm your account!';
+                            closeAuthModal();
+                        } else {
+                            result = await supabase.auth.signInWithPassword({ email, password });
+                            if (result.error) throw result.error;
+                            updateUserUI(result.data.user);
+                            closeAuthModal();
+                        }
+                    } else {
+                        // Local mock auth
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                        const mockUser = {
+                            id: 'local-' + Date.now(),
+                            email,
+                            user_metadata: { display_name: displayName || email.split('@')[0] }
+                        };
+                        localStorage.setItem('ttt_user', JSON.stringify(mockUser));
+                        updateUserUI(mockUser);
+                        closeAuthModal();
+                    }
+                } catch (error) {
+                    authError.textContent = error.message || 'Authentication failed. Please try again.';
+                } finally {
+                    isProcessing = false;
+                    authBtn.disabled = false;
+                    authBtn.textContent = isSignup ? 'Create Account' : 'Login';
+                }
+            }
+
+            async function handleLogout() {
+                try {
+                    if (useSupabase) {
+                        await supabase.auth.signOut();
+                    }
+                    localStorage.removeItem('ttt_user');
+                    updateUserUI(null);
+                    profileDropdown.classList.remove('show');
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            }
+
+            async function saveScore(winner) {
+                if (!useSupabase || !currentUser) return;
+
+                try {
+                    const { data, error } = await supabase
+                        .from('scores')
+                        .upsert({
+                            user_id: currentUser.id,
+                            wins: scores.X,
+                            losses: scores.O,
+                            draws: scores.draw,
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'user_id' });
+
+                    if (error) console.error('Error saving score:', error);
+                } catch (error) {
+                    console.error('Score save error:', error);
+                }
+            }
+
+            async function loadUserScores() {
+                if (!useSupabase || !currentUser) return;
+
+                try {
+                    const { data, error } = await supabase
+                        .from('scores')
+                        .select('wins, losses, draws')
+                        .eq('user_id', currentUser.id)
+                        .single();
+
+                    if (data) {
+                        scores.X = data.wins || 0;
+                        scores.O = data.losses || 0;
+                        scores.draw = data.draws || 0;
+                        updateScoresDisplay();
+                    } else if (error && error.code !== 'PGRST116') {
+                        console.error('Error loading scores:', error);
+                    }
+                } catch (error) {
+                    console.error('Score load error:', error);
+                }
+            }
+
+            function checkWinner() {
+                for (const pattern of winPatterns) {
+                    const [a, b, c] = pattern;
+                    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                        return { winner: board[a], pattern };
+                    }
+                }
+                return null;
+            }
+
+            function checkDraw() {
+                return board.every(cell => cell !== null);
+            }
+
+            function showWinner(winner, pattern) {
+                gameActive = false;
+                
+                pattern.forEach((idx, i) => {
+                    setTimeout(() => {
+                        cells[idx].classList.add('win-cell');
+                    }, i * 80);
+                });
+
+                scores[winner]++;
+                updateScoresDisplay();
+                saveScore(winner);
+
+                setTimeout(() => {
+                    winnerEmoji.textContent = winner === 'X' ? '🟣' : '🔵';
+                    winnerText.textContent = 'Player ' + winner + ' Wins!';
+                    winnerSub.textContent = 'Click Play Again for another round';
+                    winnerText.style.color = winner === 'X' ? '#a855f7' : '#06b6d4';
+                    winnerModal.classList.add('show');
+                    createConfetti();
+                }, 400);
+            }
+
+            function showDraw() {
+                gameActive = false;
+                scores.draw++;
+                updateScoresDisplay();
+                saveScore();
+
+                setTimeout(() => {
+                    winnerEmoji.textContent = '🤝';
+                    winnerText.textContent = "It's a Draw!";
+                    winnerSub.textContent = 'No one wins this round';
+                    winnerText.style.color = 'white';
+                    winnerModal.classList.add('show');
+                }, 300);
+            }
+
+            function handleCellClick(index) {
+                if (board[index] || !gameActive) return;
+
+                board[index] = currentPlayer;
+                const cell = cells[index];
+                cell.classList.add('taken');
+
+                const symbolEl = document.createElement('span');
+                symbolEl.className = 'symbol ' + (currentPlayer === 'X' ? 'x' : 'o');
+                symbolEl.textContent = currentPlayer;
+                cell.appendChild(symbolEl);
+
+                const result = checkWinner();
+                if (result) {
+                    showWinner(result.winner, result.pattern);
+                    return;
+                }
+
+                if (checkDraw()) {
+                    showDraw();
+                    return;
+                }
+
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                updateTurnIndicator();
+            }
+
+            function resetGame() {
+                board = Array(9).fill(null);
+                currentPlayer = 'X';
+                gameActive = true;
+
+                cells.forEach(cell => {
+                    cell.innerHTML = '';
+                    cell.className = 'cell';
+                });
+
+                updateTurnIndicator();
+                winnerModal.classList.remove('show');
+                clearConfetti();
+            }
+
+            function resetScores() {
+                scores = { X: 0, O: 0, draw: 0 };
+                updateScoresDisplay();
+                resetGame();
+            }
+
+            // Event Listeners
+            cells.forEach((cell, index) => {
+                cell.addEventListener('click', () => handleCellClick(index));
+            });
+
+            btnRestart.addEventListener('click', resetGame);
+            btnPlayAgain.addEventListener('click', resetGame);
+            btnReset.addEventListener('click', resetScores);
+            btnAuth.addEventListener('click', openAuthModal);
+            authClose.addEventListener('click', closeAuthModal);
+            
+            tabLogin.addEventListener('click', () => {
+                isSignup = false;
+                updateAuthTab();
+                authError.textContent = '';
+            });
+            
+            tabSignup.addEventListener('click', () => {
+                isSignup = true;
+                updateAuthTab();
+                authError.textContent = '';
+            });
+            
+            authForm.addEventListener('submit', handleAuth);
+            
+            guestBtn.addEventListener('click', () => {
+                currentUser = null;
+                updateUserUI(null);
+                closeAuthModal();
+            });
+
+            userBadge.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('show');
+            });
+
+            btnCloseProfile.addEventListener('click', () => {
+                profileDropdown.classList.remove('show');
+            });
+
+            btnLogout.addEventListener('click', handleLogout);
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!profileDropdown.contains(e.target) && !userBadge.contains(e.target)) {
+                    profileDropdown.classList.remove('show');
+                }
+            });
+
+            // Close modals on escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeAuthModal();
+                    winnerModal.classList.remove('show');
+                    profileDropdown.classList.remove('show');
+                }
+            });
+
+            // Initialize
+            createStars();
+            updateScoresDisplay();
+            updateTurnIndicator();
+
+            // Check for stored local user
+            const storedUser = localStorage.getItem('ttt_user');
+            if (storedUser) {
+                try {
+                    updateUserUI(JSON.parse(storedUser));
+                } catch (e) {
+                    localStorage.removeItem('ttt_user');
+                }
+            }
+
+            // Check Supabase session
+            if (useSupabase && supabase) {
+                supabase.auth.getSession().then(({ data }) => {
+                    if (data.session) {
+                        updateUserUI(data.session.user);
+                    }
+                });
+
+                supabase.auth.onAuthStateChange((event, session) => {
+                    if (event === 'SIGNED_IN' && session) {
+                        updateUserUI(session.user);
+                    } else if (event === 'SIGNED_OUT') {
+                        updateUserUI(null);
+                    }
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
+
