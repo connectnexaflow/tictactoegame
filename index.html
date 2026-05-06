@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tic Tac Toe</title>
+    <title>Tic Tac Toe - Multiplayer</title>
     <link href="https://api.fontsource.org/v1/fonts/inter/latin.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
@@ -214,6 +214,85 @@
         .turn-symbol.x-turn { color: #a855f7; }
         .turn-symbol.o-turn { color: #06b6d4; }
 
+        .game-mode-selector {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(6, 182, 212, 0.3));
+            color: white;
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+
+        .room-info {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        .room-info.show {
+            display: block;
+        }
+
+        .room-code {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #a855f7;
+            letter-spacing: 0.1em;
+            text-align: center;
+            margin: 8px 0;
+        }
+
+        .room-status {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+        }
+
+        .waiting-player {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #06b6d4;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
         .board {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -242,6 +321,8 @@
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            aspect-ratio: 1;
+            min-height: 80px;
         }
 
         .cell:active {
@@ -326,8 +407,19 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        /* Auth Modal */
-        .auth-modal {
+        .btn-invite {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-invite:hover {
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* Modal Styles */
+        .modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -344,12 +436,12 @@
             transition: opacity 0.3s ease;
         }
 
-        .auth-modal.show {
+        .modal.show {
             opacity: 1;
             pointer-events: auto;
         }
 
-        .auth-card {
+        .modal-card {
             width: 90%;
             max-width: 360px;
             padding: 24px;
@@ -359,68 +451,58 @@
             backdrop-filter: blur(20px);
             transform: scale(0.9) translateY(20px);
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
         }
 
-        .auth-modal.show .auth-card {
+        .modal.show .modal-card {
             transform: scale(1) translateY(0);
         }
 
-        .auth-header {
+        .modal-header {
             text-align: center;
             margin-bottom: 24px;
         }
 
-        .auth-title {
+        .modal-title {
             font-size: 1.6rem;
             font-weight: 800;
             color: white;
             margin-bottom: 4px;
         }
 
-        .auth-subtitle {
+        .modal-subtitle {
             color: rgba(255, 255, 255, 0.5);
             font-size: 0.85rem;
         }
 
-        .auth-tabs {
-            display: flex;
-            gap: 4px;
-            padding: 4px;
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            margin-bottom: 24px;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 10px;
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
             border: none;
-            border-radius: 10px;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.5);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 600;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.2rem;
             cursor: pointer;
-            transition: all 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .auth-tab.active {
-            background: rgba(168, 85, 247, 0.3);
-            color: white;
-        }
-
-        .auth-form {
             display: flex;
-            flex-direction: column;
-            gap: 16px;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
             gap: 6px;
+            margin-bottom: 16px;
         }
 
         .input-label {
@@ -454,124 +536,31 @@
             color: rgba(255, 255, 255, 0.25);
         }
 
-        .auth-btn {
-            padding: 14px;
-            border: none;
+        .copy-btn {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(168, 85, 247, 0.5);
             border-radius: 12px;
-            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            background: rgba(168, 85, 247, 0.2);
             color: white;
             font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-top: 8px;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .auth-btn:hover {
-            box-shadow: 0 6px 25px rgba(168, 85, 247, 0.4);
-            transform: translateY(-1px);
-        }
-
-        .auth-btn:active {
-            transform: scale(0.98);
-        }
-
-        .auth-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .auth-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .auth-close:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-
-        .auth-error {
-            color: #ef4444;
-            font-size: 0.8rem;
-            text-align: center;
-            min-height: 20px;
-            margin-top: 4px;
-        }
-
-        .guest-notice {
-            text-align: center;
-            padding: 10px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            margin-top: 16px;
-        }
-
-        .guest-notice p {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.75rem;
-        }
-
-        .guest-btn {
-            margin-top: 8px;
-            padding: 8px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.7);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
+            margin: 12px 0;
         }
 
-        .guest-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .copy-btn:hover {
+            background: rgba(168, 85, 247, 0.3);
         }
 
-        /* Winner Modal */
-        .winner-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 90;
-            background: rgba(10, 10, 26, 0.8);
-            backdrop-filter: blur(8px);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+        .copy-btn.copied {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: rgba(16, 185, 129, 0.5);
         }
 
-        .winner-modal.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .winner-content {
+        .winner-modal .winner-content {
             text-align: center;
             transform: scale(0.8) translateY(20px);
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -718,13 +707,34 @@
             to { transform: rotate(360deg); }
         }
 
+        .opponent-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            font-size: 0.75rem;
+            color: #06b6d4;
+            margin-bottom: 8px;
+        }
+
+        .online-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
         @media (max-height: 700px) {
             .container { gap: 12px; padding: 12px; }
             .title { font-size: 1.6rem; }
             .score-card { padding: 8px 6px; }
             .score-value { font-size: 1.4rem; }
             .board { max-width: 260px; gap: 6px; padding: 8px; border-radius: 16px; }
-            .cell { border-radius: 10px; }
+            .cell { border-radius: 10px; min-height: 70px; }
             .symbol { font-size: 2.2rem; }
             .btn { padding: 10px 14px; }
         }
@@ -750,6 +760,25 @@
                     <div class="user-avatar" id="userAvatar">U</div>
                     <span class="user-email" id="userEmail"></span>
                 </div>
+            </div>
+        </div>
+
+        <div class="game-mode-selector">
+            <button class="mode-btn active" id="modeLocal">Local</button>
+            <button class="mode-btn" id="modeOnline">Online</button>
+        </div>
+
+        <div class="room-info" id="roomInfo">
+            <div class="room-status" id="roomStatus">Create or join a room to play online</div>
+            <div class="room-code" id="roomCode" style="display: none;"></div>
+            <button class="copy-btn" id="copyRoomCode" style="display: none;">📋 Copy Room Code</button>
+            <div class="waiting-player" id="waitingPlayer" style="display: none;">
+                <div class="pulse-dot"></div>
+                <span>Waiting for opponent...</span>
+            </div>
+            <div class="opponent-indicator" id="opponentIndicator" style="display: none;">
+                <div class="online-dot"></div>
+                <span>Opponent online</span>
             </div>
         </div>
 
@@ -787,49 +816,29 @@
 
         <div class="btn-group">
             <button class="btn btn-restart" id="btnRestart">New Game</button>
-            <button class="btn btn-reset" id="btnReset">Reset Scores</button>
-            <button class="btn btn-reset" id="btnAuth">Sign In</button>
+            <button class="btn btn-invite" id="btnInvite" style="display: none;">Invite</button>
+            <button class="btn btn-reset" id="btnReset">Reset</button>
         </div>
     </div>
 
-    <div class="auth-modal" id="authModal">
-        <div class="auth-card" style="position: relative;">
-            <button class="auth-close" id="authClose">×</button>
-            <div class="auth-header">
-                <h2 class="auth-title">Welcome</h2>
-                <p class="auth-subtitle">Sign in to save your scores</p>
+    <!-- Join Room Modal -->
+    <div class="modal" id="joinRoomModal">
+        <div class="modal-card">
+            <button class="modal-close" id="closeJoinModal">×</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Join Room</h2>
+                <p class="modal-subtitle">Enter room code to play</p>
             </div>
-
-            <div class="auth-tabs">
-                <button class="auth-tab active" id="tabLogin">Login</button>
-                <button class="auth-tab" id="tabSignup">Sign Up</button>
+            <div class="input-group">
+                <label class="input-label">Room Code</label>
+                <input type="text" class="input-field" id="joinRoomCode" placeholder="ABC123" maxlength="6" style="text-transform: uppercase; text-align: center; letter-spacing: 0.2em; font-size: 1.2rem;">
             </div>
-
-            <form class="auth-form" id="authForm">
-                <div class="input-group" id="nameGroup" style="display: none;">
-                    <label class="input-label">Display Name</label>
-                    <input type="text" class="input-field" id="inputName" placeholder="Your name" autocomplete="name">
-                </div>
-                <div class="input-group">
-                    <label class="input-label">Email</label>
-                    <input type="email" class="input-field" id="inputEmail" placeholder="you@example.com" autocomplete="email" required>
-                </div>
-                <div class="input-group">
-                    <label class="input-label">Password</label>
-                    <input type="password" class="input-field" id="inputPassword" placeholder="••••••••" autocomplete="current-password" required>
-                </div>
-                <div class="auth-error" id="authError"></div>
-                <button type="submit" class="auth-btn" id="authBtn">Login</button>
-            </form>
-
-            <div class="guest-notice">
-                <p>Or play without an account</p>
-                <button class="guest-btn" id="guestBtn">Continue as Guest</button>
-            </div>
+            <button class="btn btn-restart" id="btnJoinRoom">Join Room</button>
         </div>
     </div>
 
-    <div class="winner-modal" id="winnerModal">
+    <!-- Winner Modal -->
+    <div class="modal winner-modal" id="winnerModal">
         <div class="winner-content">
             <div class="winner-emoji" id="winnerEmoji">🎉</div>
             <div class="winner-text" id="winnerText">Player X Wins!</div>
@@ -852,22 +861,84 @@
     <script>
         (function() {
             // ==========================================
-            // CONFIGURATION - Replace with your Supabase credentials
+            // CONFIGURATION
             // ==========================================
             const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
             const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
             
             let supabase;
             let useSupabase = false;
+            let realtimeChannel = null;
+            let currentRoom = null;
+            let mySymbol = null;
+            let opponentId = null;
+            let isMyTurn = false;
             
-            // Try to initialize Supabase
+            // Initialize Supabase
             try {
                 if (window.supabase && SUPABASE_URL !== 'https://YOUR_PROJECT_ID.supabase.co') {
                     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                     useSupabase = true;
                 }
             } catch (e) {
-                console.log('Supabase not configured, running in local mode');
+                console.log('Supabase not configured');
+            }
+
+            // Audio Context for sound effects
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioCtx = new AudioContext();
+
+            // Sound effects using Web Audio API [[9]]
+            function playSound(type) {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                if (type === 'X') {
+                    // Higher pitch for X
+                    oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    oscillator.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.15);
+                } else if (type === 'O') {
+                    // Lower pitch for O
+                    oscillator.frequency.setValueAtTime(349.23, audioCtx.currentTime); // F4
+                    oscillator.frequency.exponentialNampToValueAtTime(261.63, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.15);
+                } else if (type === 'win') {
+                    // Victory sound
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.frequency.value = freq;
+                        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.1);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.2);
+                        osc.start(audioCtx.currentTime + i * 0.1);
+                        osc.stop(audioCtx.currentTime + i * 0.1 + 0.2);
+                    });
+                } else if (type === 'draw') {
+                    // Draw sound
+                    oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    oscillator.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.3);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                }
             }
 
             // DOM Elements
@@ -882,18 +953,19 @@
             const scoreDrawEl = document.getElementById('scoreDraw');
             const btnRestart = document.getElementById('btnRestart');
             const btnReset = document.getElementById('btnReset');
-            const btnAuth = document.getElementById('btnAuth');
-            const authModal = document.getElementById('authModal');
-            const authClose = document.getElementById('authClose');
-            const tabLogin = document.getElementById('tabLogin');
-            const tabSignup = document.getElementById('tabSignup');
-            const authForm = document.getElementById('authForm');
-            const inputName = document.getElementById('inputName');
-            const inputEmail = document.getElementById('inputEmail');
-            const inputPassword = document.getElementById('inputPassword');
-            const authError = document.getElementById('authError');
-            const authBtn = document.getElementById('authBtn');
-            const guestBtn = document.getElementById('guestBtn');
+            const btnInvite = document.getElementById('btnInvite');
+            const modeLocal = document.getElementById('modeLocal');
+            const modeOnline = document.getElementById('modeOnline');
+            const roomInfo = document.getElementById('roomInfo');
+            const roomStatus = document.getElementById('roomStatus');
+            const roomCode = document.getElementById('roomCode');
+            const copyRoomCode = document.getElementById('copyRoomCode');
+            const waitingPlayer = document.getElementById('waitingPlayer');
+            const opponentIndicator = document.getElementById('opponentIndicator');
+            const joinRoomModal = document.getElementById('joinRoomModal');
+            const closeJoinModal = document.getElementById('closeJoinModal');
+            const joinRoomCode = document.getElementById('joinRoomCode');
+            const btnJoinRoom = document.getElementById('btnJoinRoom');
             const winnerModal = document.getElementById('winnerModal');
             const winnerEmoji = document.getElementById('winnerEmoji');
             const winnerText = document.getElementById('winnerText');
@@ -915,8 +987,7 @@
             let gameActive = true;
             let scores = { X: 0, O: 0, draw: 0 };
             let currentUser = null;
-            let isSignup = false;
-            let isProcessing = false;
+            let gameMode = 'local'; // 'local' or 'online'
 
             const winPatterns = [
                 [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -959,24 +1030,185 @@
                 confettiContainer.innerHTML = '';
             }
 
-            function getInitials(email) {
-                if (!email) return 'U';
-                return email.substring(0, 2).toUpperCase();
+            // Game Mode Selection
+            modeLocal.addEventListener('click', () => {
+                gameMode = 'local';
+                modeLocal.classList.add('active');
+                modeOnline.classList.remove('active');
+                roomInfo.classList.remove('show');
+                btnInvite.style.display = 'none';
+                leaveRoom();
+                resetGame();
+            });
+
+            modeOnline.addEventListener('click', () => {
+                if (!useSupabase) {
+                    alert('Online mode requires Supabase configuration');
+                    return;
+                }
+                gameMode = 'online';
+                modeOnline.classList.add('active');
+                modeLocal.classList.remove('active');
+                roomInfo.classList.add('show');
+                showRoomOptions();
+            });
+
+            function showRoomOptions() {
+                roomStatus.textContent = 'Create a new room or join existing one';
+                roomCode.style.display = 'none';
+                copyRoomCode.style.display = 'none';
+                waitingPlayer.style.display = 'none';
+                opponentIndicator.style.display = 'none';
+                btnInvite.style.display = 'block';
             }
 
-            function getUserDisplayName() {
-                if (currentUser) {
-                    return currentUser.user_metadata?.display_name || currentUser.email?.split('@')[0] || 'User';
+            function generateRoomCode() {
+                return Math.random().toString(36).substring(2, 8).toUpperCase();
+            }
+
+            async function createRoom() {
+                if (!useSupabase) return;
+                
+                currentRoom = generateRoomCode();
+                mySymbol = 'X';
+                
+                roomCode.textContent = currentRoom;
+                roomCode.style.display = 'block';
+                copyRoomCode.style.display = 'block';
+                waitingPlayer.style.display = 'flex';
+                btnInvite.style.display = 'block';
+                roomStatus.textContent = 'Share this code with your friend';
+                
+                // Subscribe to room channel using Supabase Realtime [[8]]
+                realtimeChannel = supabase.channel(`room:${currentRoom}`)
+                    .on('broadcast', { event: 'move' }, payload => {
+                        handleOpponentMove(payload.payload);
+                    })
+                    .on('broadcast', { event: 'join' }, payload => {
+                        opponentId = payload.payload.playerId;
+                        waitingPlayer.style.display = 'none';
+                        opponentIndicator.style.display = 'flex';
+                        roomStatus.textContent = 'Opponent joined! You are X, they are O';
+                    })
+                    .on('broadcast', { event: 'leave' }, payload => {
+                        opponentId = null;
+                        opponentIndicator.style.display = 'none';
+                        roomStatus.textContent = 'Opponent left. Waiting...';
+                    })
+                    .subscribe();
+                
+                // Broadcast join event
+                await supabase.channel(`room:${currentRoom}`).send({
+                    type: 'broadcast',
+                    event: 'creator-joined',
+                    payload: { playerId: currentUser?.id || 'local-player' }
+                });
+            }
+
+            async function joinRoom(roomCode) {
+                if (!useSupabase) return;
+                
+                currentRoom = roomCode.toUpperCase();
+                mySymbol = 'O';
+                
+                roomCodeEl.textContent = currentRoom;
+                roomCodeEl.style.display = 'block';
+                copyRoomCode.style.display = 'block';
+                waitingPlayer.style.display = 'none';
+                opponentIndicator.style.display = 'flex';
+                btnInvite.style.display = 'none';
+                roomStatus.textContent = 'You are Player O. Wait for your turn!';
+                
+                realtimeChannel = supabase.channel(`room:${currentRoom}`)
+                    .on('broadcast', { event: 'move' }, payload => {
+                        handleOpponentMove(payload.payload);
+                    })
+                    .on('broadcast', { event: 'creator-joined' }, payload => {
+                        opponentId = payload.payload.playerId;
+                        opponentIndicator.style.display = 'flex';
+                    })
+                    .subscribe();
+                
+                // Announce join
+                await supabase.channel(`room:${currentRoom}`).send({
+                    type: 'broadcast',
+                    event: 'join',
+                    payload: { playerId: currentUser?.id || 'local-player-2' }
+                });
+            }
+
+            function leaveRoom() {
+                if (realtimeChannel) {
+                    supabase.removeChannel(realtimeChannel);
+                    realtimeChannel = null;
                 }
-                return 'Guest';
+                currentRoom = null;
+                mySymbol = null;
+                opponentId = null;
+            }
+
+            async function sendMove(index) {
+                if (!realtimeChannel || !currentRoom) return;
+                
+                await supabase.channel(`room:${currentRoom}`).send({
+                    type: 'broadcast',
+                    event: 'move',
+                    payload: { index, symbol: mySymbol }
+                });
+            }
+
+            function handleOpponentMove(payload) {
+                const { index, symbol } = payload;
+                if (board[index]) return;
+                
+                board[index] = symbol;
+                const cell = cells[index];
+                cell.classList.add('taken');
+                
+                const symbolEl = document.createElement('span');
+                symbolEl.className = 'symbol ' + (symbol === 'X' ? 'x' : 'o');
+                symbolEl.textContent = symbol;
+                cell.appendChild(symbolEl);
+                
+                playSound(symbol);
+                
+                const result = checkWinner();
+                if (result) {
+                    showWinner(result.winner, result.pattern);
+                    return;
+                }
+                
+                if (checkDraw()) {
+                    showDraw();
+                    return;
+                }
+                
+                isMyTurn = true;
+                updateTurnIndicator();
             }
 
             // UI Updates
             function updateTurnIndicator() {
-                turnSymbol.textContent = currentPlayer;
-                turnSymbol.className = 'turn-symbol ' + (currentPlayer === 'X' ? 'x-turn' : 'o-turn');
-                scoreCardX.className = 'score-card score-x' + (currentPlayer === 'X' ? ' active-x' : '');
-                scoreCardO.className = 'score-card score-o' + (currentPlayer === 'O' ? ' active-o' : '');
+                if (gameMode === 'online' && mySymbol) {
+                    const displayTurn = isMyTurn ? mySymbol : (mySymbol === 'X' ? 'O' : 'X');
+                    turnSymbol.textContent = displayTurn;
+                    turnSymbol.className = 'turn-symbol ' + (displayTurn === 'X' ? 'x-turn' : 'o-turn');
+                    
+                    if (isMyTurn) {
+                        turnIndicator.style.opacity = '1';
+                        boardEl.style.pointerEvents = 'auto';
+                    } else {
+                        turnIndicator.style.opacity = '0.6';
+                        boardEl.style.pointerEvents = 'none';
+                    }
+                } else {
+                    turnSymbol.textContent = currentPlayer;
+                    turnSymbol.className = 'turn-symbol ' + (currentPlayer === 'X' ? 'x-turn' : 'o-turn');
+                    boardEl.style.pointerEvents = 'auto';
+                }
+                
+                scoreCardX.className = 'score-card score-x' + ((gameMode === 'local' && currentPlayer === 'X') || (gameMode === 'online' && mySymbol === 'X' && isMyTurn) ? ' active-x' : '');
+                scoreCardO.className = 'score-card score-o' + ((gameMode === 'local' && currentPlayer === 'O') || (gameMode === 'online' && mySymbol === 'O' && isMyTurn) ? ' active-o' : '');
             }
 
             function updateScoresDisplay() {
@@ -985,176 +1217,24 @@
                 scoreDrawEl.textContent = scores.draw;
             }
 
-            function updateUserUI(user) {
-                if (user) {
-                    currentUser = user;
-                    userBadge.style.display = 'flex';
-                    userAvatar.textContent = getInitials(user.email);
-                    userEmail.textContent = user.email;
-                    profileName.textContent = getUserDisplayName();
-                    profileEmail.textContent = user.email;
-                    btnAuth.textContent = 'Sign Out';
-                    btnAuth.onclick = handleLogout;
-                    loadUserScores();
-                } else {
-                    currentUser = null;
-                    userBadge.style.display = 'none';
-                    btnAuth.textContent = 'Sign In';
-                    btnAuth.onclick = openAuthModal;
-                    resetLocalScores();
+            function createConfetti() {
+                const colors = ['#a855f7', '#06b6d4', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
+                for (let i = 0; i < 50; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.setProperty('--fall-duration', (2 + Math.random() * 2) + 's');
+                    confetti.style.setProperty('--rotation', (360 + Math.random() * 720) + 'deg');
+                    confetti.style.animationDelay = Math.random() * 0.8 + 's';
+                    confetti.style.width = (6 + Math.random() * 8) + 'px';
+                    confetti.style.height = (6 + Math.random() * 8) + 'px';
+                    confettiContainer.appendChild(confetti);
                 }
             }
 
-            function resetLocalScores() {
-                scores = { X: 0, O: 0, draw: 0 };
-                updateScoresDisplay();
-            }
-
-            function openAuthModal() {
-                authModal.classList.add('show');
-                isSignup = false;
-                updateAuthTab();
-                authError.textContent = '';
-                inputEmail.value = '';
-                inputPassword.value = '';
-                inputName.value = '';
-            }
-
-            function closeAuthModal() {
-                authModal.classList.remove('show');
-            }
-
-            function updateAuthTab() {
-                tabLogin.classList.toggle('active', !isSignup);
-                tabSignup.classList.toggle('active', isSignup);
-                authBtn.textContent = isSignup ? 'Create Account' : 'Login';
-                document.getElementById('nameGroup').style.display = isSignup ? 'flex' : 'none';
-            }
-
-            async function handleAuth(e) {
-                e.preventDefault();
-                if (isProcessing) return;
-
-                const email = inputEmail.value.trim();
-                const password = inputPassword.value.trim();
-                const displayName = inputName.value.trim();
-
-                if (!email || !password) {
-                    authError.textContent = 'Please fill in all fields';
-                    return;
-                }
-
-                if (isSignup && password.length < 6) {
-                    authError.textContent = 'Password must be at least 6 characters';
-                    return;
-                }
-
-                isProcessing = true;
-                authBtn.disabled = true;
-                authBtn.innerHTML = '<div class="loading-spinner"></div>';
-                authError.textContent = '';
-
-                try {
-                    if (useSupabase) {
-                        let result;
-                        if (isSignup) {
-                            result = await supabase.auth.signUp({
-                                email,
-                                password,
-                                options: {
-                                    data: { display_name: displayName || email.split('@')[0] }
-                                }
-                            });
-                            if (result.error) throw result.error;
-                            
-                            if (result.data?.user?.identities?.length === 0) {
-                                authError.textContent = 'An account with this email already exists. Please login instead.';
-                                return;
-                            }
-                            
-                            authError.textContent = 'Check your email to confirm your account!';
-                            closeAuthModal();
-                        } else {
-                            result = await supabase.auth.signInWithPassword({ email, password });
-                            if (result.error) throw result.error;
-                            updateUserUI(result.data.user);
-                            closeAuthModal();
-                        }
-                    } else {
-                        // Local mock auth
-                        await new Promise(resolve => setTimeout(resolve, 800));
-                        const mockUser = {
-                            id: 'local-' + Date.now(),
-                            email,
-                            user_metadata: { display_name: displayName || email.split('@')[0] }
-                        };
-                        localStorage.setItem('ttt_user', JSON.stringify(mockUser));
-                        updateUserUI(mockUser);
-                        closeAuthModal();
-                    }
-                } catch (error) {
-                    authError.textContent = error.message || 'Authentication failed. Please try again.';
-                } finally {
-                    isProcessing = false;
-                    authBtn.disabled = false;
-                    authBtn.textContent = isSignup ? 'Create Account' : 'Login';
-                }
-            }
-
-            async function handleLogout() {
-                try {
-                    if (useSupabase) {
-                        await supabase.auth.signOut();
-                    }
-                    localStorage.removeItem('ttt_user');
-                    updateUserUI(null);
-                    profileDropdown.classList.remove('show');
-                } catch (error) {
-                    console.error('Logout error:', error);
-                }
-            }
-
-            async function saveScore(winner) {
-                if (!useSupabase || !currentUser) return;
-
-                try {
-                    const { data, error } = await supabase
-                        .from('scores')
-                        .upsert({
-                            user_id: currentUser.id,
-                            wins: scores.X,
-                            losses: scores.O,
-                            draws: scores.draw,
-                            updated_at: new Date().toISOString()
-                        }, { onConflict: 'user_id' });
-
-                    if (error) console.error('Error saving score:', error);
-                } catch (error) {
-                    console.error('Score save error:', error);
-                }
-            }
-
-            async function loadUserScores() {
-                if (!useSupabase || !currentUser) return;
-
-                try {
-                    const { data, error } = await supabase
-                        .from('scores')
-                        .select('wins, losses, draws')
-                        .eq('user_id', currentUser.id)
-                        .single();
-
-                    if (data) {
-                        scores.X = data.wins || 0;
-                        scores.O = data.losses || 0;
-                        scores.draw = data.draws || 0;
-                        updateScoresDisplay();
-                    } else if (error && error.code !== 'PGRST116') {
-                        console.error('Error loading scores:', error);
-                    }
-                } catch (error) {
-                    console.error('Score load error:', error);
-                }
+            function clearConfetti() {
+                confettiContainer.innerHTML = '';
             }
 
             function checkWinner() {
@@ -1182,7 +1262,7 @@
 
                 scores[winner]++;
                 updateScoresDisplay();
-                saveScore(winner);
+                playSound('win');
 
                 setTimeout(() => {
                     winnerEmoji.textContent = winner === 'X' ? '🟣' : '🔵';
@@ -1198,7 +1278,7 @@
                 gameActive = false;
                 scores.draw++;
                 updateScoresDisplay();
-                saveScore();
+                playSound('draw');
 
                 setTimeout(() => {
                     winnerEmoji.textContent = '🤝';
@@ -1212,34 +1292,68 @@
             function handleCellClick(index) {
                 if (board[index] || !gameActive) return;
 
-                board[index] = currentPlayer;
-                const cell = cells[index];
-                cell.classList.add('taken');
+                if (gameMode === 'online') {
+                    if (!isMyTurn) return;
+                    
+                    board[index] = mySymbol;
+                    const cell = cells[index];
+                    cell.classList.add('taken');
 
-                const symbolEl = document.createElement('span');
-                symbolEl.className = 'symbol ' + (currentPlayer === 'X' ? 'x' : 'o');
-                symbolEl.textContent = currentPlayer;
-                cell.appendChild(symbolEl);
+                    const symbolEl = document.createElement('span');
+                    symbolEl.className = 'symbol ' + (mySymbol === 'X' ? 'x' : 'o');
+                    symbolEl.textContent = mySymbol;
+                    cell.appendChild(symbolEl);
+                    
+                    playSound(mySymbol);
+                    sendMove(index);
 
-                const result = checkWinner();
-                if (result) {
-                    showWinner(result.winner, result.pattern);
-                    return;
+                    const result = checkWinner();
+                    if (result) {
+                        showWinner(result.winner, result.pattern);
+                        return;
+                    }
+
+                    if (checkDraw()) {
+                        showDraw();
+                        return;
+                    }
+
+                    isMyTurn = false;
+                    updateTurnIndicator();
+                } else {
+                    // Local mode
+                    board[index] = currentPlayer;
+                    const cell = cells[index];
+                    cell.classList.add('taken');
+
+                    const symbolEl = document.createElement('span');
+                    symbolEl.className = 'symbol ' + (currentPlayer === 'X' ? 'x' : 'o');
+                    symbolEl.textContent = currentPlayer;
+                    cell.appendChild(symbolEl);
+                    
+                    playSound(currentPlayer);
+
+                    const result = checkWinner();
+                    if (result) {
+                        showWinner(result.winner, result.pattern);
+                        return;
+                    }
+
+                    if (checkDraw()) {
+                        showDraw();
+                        return;
+                    }
+
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    updateTurnIndicator();
                 }
-
-                if (checkDraw()) {
-                    showDraw();
-                    return;
-                }
-
-                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                updateTurnIndicator();
             }
 
             function resetGame() {
                 board = Array(9).fill(null);
                 currentPlayer = 'X';
                 gameActive = true;
+                isMyTurn = mySymbol === 'X';
 
                 cells.forEach(cell => {
                     cell.innerHTML = '';
@@ -1265,51 +1379,48 @@
             btnRestart.addEventListener('click', resetGame);
             btnPlayAgain.addEventListener('click', resetGame);
             btnReset.addEventListener('click', resetScores);
-            btnAuth.addEventListener('click', openAuthModal);
-            authClose.addEventListener('click', closeAuthModal);
             
-            tabLogin.addEventListener('click', () => {
-                isSignup = false;
-                updateAuthTab();
-                authError.textContent = '';
-            });
-            
-            tabSignup.addEventListener('click', () => {
-                isSignup = true;
-                updateAuthTab();
-                authError.textContent = '';
-            });
-            
-            authForm.addEventListener('submit', handleAuth);
-            
-            guestBtn.addEventListener('click', () => {
-                currentUser = null;
-                updateUserUI(null);
-                closeAuthModal();
-            });
-
-            userBadge.addEventListener('click', (e) => {
-                e.stopPropagation();
-                profileDropdown.classList.toggle('show');
-            });
-
-            btnCloseProfile.addEventListener('click', () => {
-                profileDropdown.classList.remove('show');
-            });
-
-            btnLogout.addEventListener('click', handleLogout);
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!profileDropdown.contains(e.target) && !userBadge.contains(e.target)) {
-                    profileDropdown.classList.remove('show');
+            btnInvite.addEventListener('click', () => {
+                if (!currentRoom) {
+                    createRoom();
+                } else {
+                    // Copy room code
+                    navigator.clipboard.writeText(currentRoom);
+                    copyRoomCode.textContent = '✓ Copied!';
+                    copyRoomCode.classList.add('copied');
+                    setTimeout(() => {
+                        copyRoomCode.textContent = '📋 Copy Room Code';
+                        copyRoomCode.classList.remove('copied');
+                    }, 2000);
                 }
+            });
+
+            copyRoomCode.addEventListener('click', () => {
+                navigator.clipboard.writeText(currentRoom);
+                copyRoomCode.textContent = '✓ Copied!';
+                copyRoomCode.classList.add('copied');
+                setTimeout(() => {
+                    copyRoomCode.textContent = '📋 Copy Room Code';
+                    copyRoomCode.classList.remove('copied');
+                }, 2000);
+            });
+
+            btnJoinRoom.addEventListener('click', () => {
+                const code = joinRoomCode.value.trim().toUpperCase();
+                if (code.length === 6) {
+                    joinRoom(code);
+                    joinRoomModal.classList.remove('show');
+                }
+            });
+
+            closeJoinModal.addEventListener('click', () => {
+                joinRoomModal.classList.remove('show');
             });
 
             // Close modals on escape
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    closeAuthModal();
+                    joinRoomModal.classList.remove('show');
                     winnerModal.classList.remove('show');
                     profileDropdown.classList.remove('show');
                 }
@@ -1319,35 +1430,9 @@
             createStars();
             updateScoresDisplay();
             updateTurnIndicator();
-
-            // Check for stored local user
-            const storedUser = localStorage.getItem('ttt_user');
-            if (storedUser) {
-                try {
-                    updateUserUI(JSON.parse(storedUser));
-                } catch (e) {
-                    localStorage.removeItem('ttt_user');
-                }
-            }
-
-            // Check Supabase session
-            if (useSupabase && supabase) {
-                supabase.auth.getSession().then(({ data }) => {
-                    if (data.session) {
-                        updateUserUI(data.session.user);
-                    }
-                });
-
-                supabase.auth.onAuthStateChange((event, session) => {
-                    if (event === 'SIGNED_IN' && session) {
-                        updateUserUI(session.user);
-                    } else if (event === 'SIGNED_OUT') {
-                        updateUserUI(null);
-                    }
-                });
-            }
         })();
     </script>
 </body>
 </html>
+
 
