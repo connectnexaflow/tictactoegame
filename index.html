@@ -6,7 +6,7 @@
     <title>Tic Tac Toe - Multiplayer</title>
     <link href="https://api.fontsource.org/v1/fonts/inter/latin.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <style>
+        <style>
         * {
             margin: 0;
             padding: 0;
@@ -743,6 +743,84 @@
             .board { max-width: 340px; }
             .symbol { font-size: 3.2rem; }
         }
+  
+        /* UPDATED ROOM INFO STYLES */
+        .room-info { width: 100%; padding: 16px; border-radius: 16px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); margin-bottom: 8px; display: none; }
+        .room-info.show { display: block; }
+        .room-error { color: #ef4444; font-size: 0.8rem; text-align: center; margin-bottom: 12px; display: none; }
+        .room-error.show { display: block; }
+        .room-actions { display: flex; flex-direction: column; gap: 12px; }
+        .btn-create-room { width: 100%; padding: 12px; border: 1px solid rgba(168, 85, 247, 0.5); border-radius: 10px; background: linear-gradient(135deg, #a855f7, #7c3aed); color: white; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .btn-create-room:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4); }
+        .btn-create-room:active { transform: scale(0.98); }
+        .divider { display: flex; align-items: center; gap: 12px; color: rgba(255, 255, 255, 0.4); font-size: 0.75rem; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1); }
+        .join-section { display: flex; gap: 8px; }
+        .join-input { flex: 1; padding: 10px 14px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; background: rgba(255, 255, 255, 0.06); color: white; font-family: 'Inter', sans-serif; font-size: 0.9rem; text-align: center; text-transform: uppercase; letter-spacing: 0.1em; outline: none; transition: all 0.2s ease; }
+        .join-input:focus { border-color: rgba(6, 182, 212, 0.5); background: rgba(255, 255, 255, 0.08); }
+        .join-input::placeholder { color: rgba(255, 255, 255, 0.3); letter-spacing: 0.05em; text-transform: uppercase; }
+        .btn-join-room { padding: 10px 16px; border: none; border-radius: 10px; background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; }
+        .btn-join-room:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4); }
+        
+        /* Room Active State */
+        .room-active-view { display: none; text-align: center; }
+        .room-active-view.show { display: block; }
+        .room-code-display { background: rgba(168, 85, 247, 0.2); border: 2px solid rgba(168, 85, 247, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+        .room-code { font-size: 1.5rem; font-weight: 800; color: #a855f7; letter-spacing: 0.15em; }
+        .btn-copy { width: 100%; padding: 10px; border: 1px solid rgba(168, 85, 247, 0.5); border-radius: 10px; background: rgba(168, 85, 247, 0.2); color: white; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; margin-bottom: 8px; }
+        .btn-copy:hover { background: rgba(168, 85, 247, 0.3); }
+        .btn-copy.copied { background: rgba(16, 185, 129, 0.3); border-color: rgba(16, 185, 129, 0.5); }
+        .room-status { font-size: 0.8rem; color: rgba(255, 255, 255, 0.6); }
+        .waiting-player { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); }
+        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: #06b6d4; animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
+        .opponent-indicator { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); font-size: 0.75rem; color: #06b6d4; margin-top: 8px; }
+        .online-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: pulse 1.5s ease-in-out infinite; }
+        .btn-leave-room { margin-top: 12px; padding: 8px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; background: transparent; color: rgba(255, 255, 255, 0.6); font-family: 'Inter', sans-serif; font-size: 0.75rem; cursor: pointer; transition: all 0.2s ease; }
+        .btn-leave-room:hover { background: rgba(255, 255, 255, 0.1); }
+
+        .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px; aspect-ratio: 1; padding: 12px; border-radius: 20px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); backdrop-filter: blur(10px); position: relative; }
+        .cell { display: flex; align-items: center; justify-content: center; border-radius: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06); cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; -webkit-tap-highlight-color: transparent; touch-action: manipulation; aspect-ratio: 1; min-height: 80px; }
+        .cell:active { transform: scale(0.92); }
+        .cell:not(.taken):hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.15); }
+        .cell.taken { cursor: default; }
+        .cell.win-cell { animation: winPulse 0.5s ease; }
+        @keyframes winPulse { 0%, 100% { background: rgba(255, 255, 255, 0.04); } 50% { background: rgba(255, 255, 255, 0.15); } }
+        .symbol { font-size: 2.8rem; font-weight: 900; opacity: 0; transform: scale(0) rotate(-20deg); animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .symbol.x { color: #a855f7; text-shadow: 0 0 20px rgba(168, 85, 247, 0.5); }
+        .symbol.o { color: #06b6d4; text-shadow: 0 0 20px rgba(6, 182, 212, 0.5); }
+        @keyframes popIn { to { opacity: 1; transform: scale(1) rotate(0deg); } }
+        .btn-group { display: flex; gap: 8px; width: 100%; }
+        .btn { flex: 1; padding: 12px 16px; border: none; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        .btn:active { transform: scale(0.96); }
+        .btn-restart { background: linear-gradient(135deg, #a855f7, #7c3aed); color: white; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3); }
+        .btn-restart:hover { box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4); transform: translateY(-1px); }
+        .btn-reset { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-reset:hover { background: rgba(255, 255, 255, 0.1); }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 100; background: rgba(10, 10, 26, 0.85); backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal.show { opacity: 1; pointer-events: auto; }
+        .modal-card { width: 90%; max-width: 360px; padding: 24px; border-radius: 24px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); transform: scale(0.9) translateY(20px); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+        .modal.show .modal-card { transform: scale(1) translateY(0); }
+        .winner-modal .winner-content { text-align: center; transform: scale(0.8) translateY(20px); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .winner-modal.show .winner-content { transform: scale(1) translateY(0); }
+        .winner-emoji { font-size: 3.5rem; margin-bottom: 12px; animation: bounce 1s ease infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .winner-text { font-size: 1.8rem; font-weight: 800; color: white; margin-bottom: 6px; }
+        .winner-sub { color: rgba(255, 255, 255, 0.5); font-size: 0.9rem; margin-bottom: 24px; }
+        .confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 89; overflow: hidden; }
+        .confetti { position: absolute; width: 10px; height: 10px; border-radius: 2px; animation: confettiFall var(--fall-duration) linear forwards; opacity: 0; }
+        @keyframes confettiFall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(var(--rotation)); opacity: 0; } }
+        .profile-dropdown { position: absolute; top: 60px; right: 10px; width: 220px; padding: 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); z-index: 50; opacity: 0; pointer-events: none; transform: translateY(-10px); transition: all 0.2s ease; }
+        .profile-dropdown.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .profile-info { padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 12px; }
+        .profile-name { color: white; font-weight: 600; font-size: 0.9rem; margin-bottom: 2px; }
+        .profile-email { color: rgba(255, 255, 255, 0.5); font-size: 0.75rem; word-break: break-all; }
+        .profile-btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px; -webkit-tap-highlight-color: transparent; }
+        .profile-btn-logout { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .profile-btn-logout:hover { background: rgba(239, 68, 68, 0.3); }
+        .profile-btn-close { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.6); margin-top: 8px; }
+        @media (max-height: 700px) { .container { gap: 12px; padding: 12px; } .title { font-size: 1.6rem; } .score-card { padding: 8px 6px; } .score-value { font-size: 1.4rem; } .board { max-width: 260px; gap: 6px; padding: 8px; border-radius: 16px; } .cell { border-radius: 10px; min-height: 70px; } .symbol { font-size: 2.2rem; } .btn { padding: 10px 14px; } }
+        @media (min-width: 500px) { .board { max-width: 340px; } .symbol { font-size: 3.2rem; } }
     </style>
 </head>
 <body>
@@ -769,16 +847,33 @@
         </div>
 
         <div class="room-info" id="roomInfo">
-            <div class="room-status" id="roomStatus">Create or join a room to play online</div>
-            <div class="room-code" id="roomCode" style="display: none;"></div>
-            <button class="copy-btn" id="copyRoomCode" style="display: none;">📋 Copy Room Code</button>
-            <div class="waiting-player" id="waitingPlayer" style="display: none;">
-                <div class="pulse-dot"></div>
-                <span>Waiting for opponent...</span>
+            <div class="room-error" id="roomError">Supabase not configured. Add your keys to play online.</div>
+            
+            <!-- Initial Selection View -->
+            <div class="room-actions" id="roomActions">
+                <button class="btn-create-room" id="btnCreateRoom">🏠 Create New Room</button>
+                <div class="divider">OR</div>
+                <div class="join-section">
+                    <input type="text" class="join-input" id="joinRoomInput" placeholder="Enter Code" maxlength="6">
+                    <button class="btn-join-room" id="btnJoinRoom">Join</button>
+                </div>
             </div>
-            <div class="opponent-indicator" id="opponentIndicator" style="display: none;">
-                <div class="online-dot"></div>
-                <span>Opponent online</span>
+
+            <!-- Active Room View -->
+            <div class="room-active-view" id="roomActiveView">
+                <div class="room-code-display">
+                    <div class="room-code" id="roomCode">---</div>
+                </div>
+                <button class="btn-copy" id="copyRoomCode">📋 Copy Code</button>
+                <div class="waiting-player" id="waitingPlayer">
+                    <div class="pulse-dot"></div>
+                    <span>Waiting for opponent...</span>
+                </div>
+                <div class="opponent-indicator" id="opponentIndicator" style="display: none;">
+                    <div class="online-dot"></div>
+                    <span>Opponent connected</span>
+                </div>
+                <button class="btn-leave-room" id="btnLeaveRoom">Leave Room</button>
             </div>
         </div>
 
@@ -816,31 +911,14 @@
 
         <div class="btn-group">
             <button class="btn btn-restart" id="btnRestart">New Game</button>
-            <button class="btn btn-invite" id="btnInvite" style="display: none;">Invite</button>
             <button class="btn btn-reset" id="btnReset">Reset</button>
-        </div>
-    </div>
-
-    <!-- Join Room Modal -->
-    <div class="modal" id="joinRoomModal">
-        <div class="modal-card">
-            <button class="modal-close" id="closeJoinModal">×</button>
-            <div class="modal-header">
-                <h2 class="modal-title">Join Room</h2>
-                <p class="modal-subtitle">Enter room code to play</p>
-            </div>
-            <div class="input-group">
-                <label class="input-label">Room Code</label>
-                <input type="text" class="input-field" id="joinRoomCode" placeholder="ABC123" maxlength="6" style="text-transform: uppercase; text-align: center; letter-spacing: 0.2em; font-size: 1.2rem;">
-            </div>
-            <button class="btn btn-restart" id="btnJoinRoom">Join Room</button>
         </div>
     </div>
 
     <!-- Winner Modal -->
     <div class="modal winner-modal" id="winnerModal">
         <div class="winner-content">
-            <div class="winner-emoji" id="winnerEmoji">🎉</div>
+            <div class="winner-emoji" id="winnerEmoji"></div>
             <div class="winner-text" id="winnerText">Player X Wins!</div>
             <div class="winner-sub" id="winnerSub">Click New Game to play again</div>
             <button class="btn btn-restart" id="btnPlayAgain">Play Again</button>
@@ -884,40 +962,31 @@
                 console.log('Supabase not configured');
             }
 
-            // Audio Context for sound effects
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             const audioCtx = new AudioContext();
 
-            // Sound effects using Web Audio API [[9]]
             function playSound(type) {
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-                
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
-                
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
                 
                 if (type === 'X') {
-                    // Higher pitch for X
-                    oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
                     oscillator.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.1);
                     gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
                     oscillator.start(audioCtx.currentTime);
                     oscillator.stop(audioCtx.currentTime + 0.15);
                 } else if (type === 'O') {
-                    // Lower pitch for O
-                    oscillator.frequency.setValueAtTime(349.23, audioCtx.currentTime); // F4
-                    oscillator.frequency.exponentialNampToValueAtTime(261.63, audioCtx.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(349.23, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(261.63, audioCtx.currentTime + 0.1);
                     gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
                     oscillator.start(audioCtx.currentTime);
                     oscillator.stop(audioCtx.currentTime + 0.15);
                 } else if (type === 'win') {
-                    // Victory sound
                     const notes = [523.25, 659.25, 783.99, 1046.50];
                     notes.forEach((freq, i) => {
                         const osc = audioCtx.createOscillator();
@@ -931,7 +1000,6 @@
                         osc.stop(audioCtx.currentTime + i * 0.1 + 0.2);
                     });
                 } else if (type === 'draw') {
-                    // Draw sound
                     oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
                     oscillator.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.3);
                     gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
@@ -953,19 +1021,20 @@
             const scoreDrawEl = document.getElementById('scoreDraw');
             const btnRestart = document.getElementById('btnRestart');
             const btnReset = document.getElementById('btnReset');
-            const btnInvite = document.getElementById('btnInvite');
             const modeLocal = document.getElementById('modeLocal');
             const modeOnline = document.getElementById('modeOnline');
             const roomInfo = document.getElementById('roomInfo');
-            const roomStatus = document.getElementById('roomStatus');
-            const roomCode = document.getElementById('roomCode');
+            const roomError = document.getElementById('roomError');
+            const roomActions = document.getElementById('roomActions');
+            const roomActiveView = document.getElementById('roomActiveView');
+            const btnCreateRoom = document.getElementById('btnCreateRoom');
+            const joinRoomInput = document.getElementById('joinRoomInput');
+            const btnJoinRoom = document.getElementById('btnJoinRoom');
+            const roomCodeEl = document.getElementById('roomCode');
             const copyRoomCode = document.getElementById('copyRoomCode');
             const waitingPlayer = document.getElementById('waitingPlayer');
             const opponentIndicator = document.getElementById('opponentIndicator');
-            const joinRoomModal = document.getElementById('joinRoomModal');
-            const closeJoinModal = document.getElementById('closeJoinModal');
-            const joinRoomCode = document.getElementById('joinRoomCode');
-            const btnJoinRoom = document.getElementById('btnJoinRoom');
+            const btnLeaveRoom = document.getElementById('btnLeaveRoom');
             const winnerModal = document.getElementById('winnerModal');
             const winnerEmoji = document.getElementById('winnerEmoji');
             const winnerText = document.getElementById('winnerText');
@@ -981,13 +1050,12 @@
             const turnIndicator = document.getElementById('turnIndicator');
             const turnSymbol = document.getElementById('turnSymbol');
 
-            // State
             let board = Array(9).fill(null);
             let currentPlayer = 'X';
             let gameActive = true;
             let scores = { X: 0, O: 0, draw: 0 };
             let currentUser = null;
-            let gameMode = 'local'; // 'local' or 'online'
+            let gameMode = 'local';
 
             const winPatterns = [
                 [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -995,7 +1063,6 @@
                 [0, 4, 8], [2, 4, 6]
             ];
 
-            // Generate stars background
             function createStars() {
                 const starsContainer = document.getElementById('stars');
                 for (let i = 0; i < 60; i++) {
@@ -1030,36 +1097,38 @@
                 confettiContainer.innerHTML = '';
             }
 
-            // Game Mode Selection
+            // Mode Selection
             modeLocal.addEventListener('click', () => {
                 gameMode = 'local';
                 modeLocal.classList.add('active');
                 modeOnline.classList.remove('active');
                 roomInfo.classList.remove('show');
-                btnInvite.style.display = 'none';
                 leaveRoom();
                 resetGame();
             });
 
             modeOnline.addEventListener('click', () => {
                 if (!useSupabase) {
-                    alert('Online mode requires Supabase configuration');
+                    roomError.classList.add('show');
                     return;
                 }
+                roomError.classList.remove('show');
                 gameMode = 'online';
                 modeOnline.classList.add('active');
                 modeLocal.classList.remove('active');
                 roomInfo.classList.add('show');
-                showRoomOptions();
+                showRoomSelection();
             });
 
-            function showRoomOptions() {
-                roomStatus.textContent = 'Create a new room or join existing one';
-                roomCode.style.display = 'none';
-                copyRoomCode.style.display = 'none';
-                waitingPlayer.style.display = 'none';
-                opponentIndicator.style.display = 'none';
-                btnInvite.style.display = 'block';
+            function showRoomSelection() {
+                roomActions.style.display = 'flex';
+                roomActiveView.classList.remove('show');
+                joinRoomInput.value = '';
+            }
+
+            function showActiveRoom() {
+                roomActions.style.display = 'none';
+                roomActiveView.classList.add('show');
             }
 
             function generateRoomCode() {
@@ -1072,14 +1141,13 @@
                 currentRoom = generateRoomCode();
                 mySymbol = 'X';
                 
-                roomCode.textContent = currentRoom;
-                roomCode.style.display = 'block';
-                copyRoomCode.style.display = 'block';
+                roomCodeEl.textContent = currentRoom;
+                showActiveRoom();
                 waitingPlayer.style.display = 'flex';
-                btnInvite.style.display = 'block';
-                roomStatus.textContent = 'Share this code with your friend';
+                opponentIndicator.style.display = 'none';
+                joinRoomInput.disabled = true;
+                btnJoinRoom.disabled = true;
                 
-                // Subscribe to room channel using Supabase Realtime [[8]]
                 realtimeChannel = supabase.channel(`room:${currentRoom}`)
                     .on('broadcast', { event: 'move' }, payload => {
                         handleOpponentMove(payload.payload);
@@ -1088,16 +1156,16 @@
                         opponentId = payload.payload.playerId;
                         waitingPlayer.style.display = 'none';
                         opponentIndicator.style.display = 'flex';
-                        roomStatus.textContent = 'Opponent joined! You are X, they are O';
+                        joinRoomInput.disabled = false;
+                        btnJoinRoom.disabled = false;
                     })
                     .on('broadcast', { event: 'leave' }, payload => {
                         opponentId = null;
                         opponentIndicator.style.display = 'none';
-                        roomStatus.textContent = 'Opponent left. Waiting...';
+                        waitingPlayer.style.display = 'flex';
                     })
                     .subscribe();
                 
-                // Broadcast join event
                 await supabase.channel(`room:${currentRoom}`).send({
                     type: 'broadcast',
                     event: 'creator-joined',
@@ -1108,16 +1176,20 @@
             async function joinRoom(roomCode) {
                 if (!useSupabase) return;
                 
-                currentRoom = roomCode.toUpperCase();
+                const code = roomCode.toUpperCase().trim();
+                if (code.length !== 6) {
+                    alert('Please enter a valid 6-character room code');
+                    return;
+                }
+                
+                currentRoom = code;
                 mySymbol = 'O';
                 
                 roomCodeEl.textContent = currentRoom;
-                roomCodeEl.style.display = 'block';
-                copyRoomCode.style.display = 'block';
+                showActiveRoom();
                 waitingPlayer.style.display = 'none';
                 opponentIndicator.style.display = 'flex';
-                btnInvite.style.display = 'none';
-                roomStatus.textContent = 'You are Player O. Wait for your turn!';
+                joinRoomInput.value = '';
                 
                 realtimeChannel = supabase.channel(`room:${currentRoom}`)
                     .on('broadcast', { event: 'move' }, payload => {
@@ -1127,14 +1199,15 @@
                         opponentId = payload.payload.playerId;
                         opponentIndicator.style.display = 'flex';
                     })
-                    .subscribe();
-                
-                // Announce join
-                await supabase.channel(`room:${currentRoom}`).send({
-                    type: 'broadcast',
-                    event: 'join',
-                    payload: { playerId: currentUser?.id || 'local-player-2' }
-                });
+                    .subscribe(async (status) => {
+                        if (status === 'SUBSCRIBED') {
+                            await supabase.channel(`room:${currentRoom}`).send({
+                                type: 'broadcast',
+                                event: 'join',
+                                payload: { playerId: currentUser?.id || 'local-player-2' }
+                            });
+                        }
+                    });
             }
 
             function leaveRoom() {
@@ -1145,11 +1218,14 @@
                 currentRoom = null;
                 mySymbol = null;
                 opponentId = null;
+                isMyTurn = false;
+                joinRoomInput.disabled = false;
+                btnJoinRoom.disabled = false;
+                showRoomSelection();
             }
 
             async function sendMove(index) {
                 if (!realtimeChannel || !currentRoom) return;
-                
                 await supabase.channel(`room:${currentRoom}`).send({
                     type: 'broadcast',
                     event: 'move',
@@ -1187,7 +1263,6 @@
                 updateTurnIndicator();
             }
 
-            // UI Updates
             function updateTurnIndicator() {
                 if (gameMode === 'online' && mySymbol) {
                     const displayTurn = isMyTurn ? mySymbol : (mySymbol === 'X' ? 'O' : 'X');
@@ -1217,26 +1292,6 @@
                 scoreDrawEl.textContent = scores.draw;
             }
 
-            function createConfetti() {
-                const colors = ['#a855f7', '#06b6d4', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
-                for (let i = 0; i < 50; i++) {
-                    const confetti = document.createElement('div');
-                    confetti.className = 'confetti';
-                    confetti.style.left = Math.random() * 100 + '%';
-                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                    confetti.style.setProperty('--fall-duration', (2 + Math.random() * 2) + 's');
-                    confetti.style.setProperty('--rotation', (360 + Math.random() * 720) + 'deg');
-                    confetti.style.animationDelay = Math.random() * 0.8 + 's';
-                    confetti.style.width = (6 + Math.random() * 8) + 'px';
-                    confetti.style.height = (6 + Math.random() * 8) + 'px';
-                    confettiContainer.appendChild(confetti);
-                }
-            }
-
-            function clearConfetti() {
-                confettiContainer.innerHTML = '';
-            }
-
             function checkWinner() {
                 for (const pattern of winPatterns) {
                     const [a, b, c] = pattern;
@@ -1253,7 +1308,6 @@
 
             function showWinner(winner, pattern) {
                 gameActive = false;
-                
                 pattern.forEach((idx, i) => {
                     setTimeout(() => {
                         cells[idx].classList.add('win-cell');
@@ -1321,7 +1375,6 @@
                     isMyTurn = false;
                     updateTurnIndicator();
                 } else {
-                    // Local mode
                     board[index] = currentPlayer;
                     const cell = cells[index];
                     cell.classList.add('taken');
@@ -1378,55 +1431,49 @@
 
             btnRestart.addEventListener('click', resetGame);
             btnPlayAgain.addEventListener('click', resetGame);
-            btnReset.addEventListener('click', resetScores);
+            btnReset.addEventListener('click', () => {
+                resetScores();
+                leaveRoom();
+            });
             
-            btnInvite.addEventListener('click', () => {
-                if (!currentRoom) {
-                    createRoom();
-                } else {
-                    // Copy room code
+            btnCreateRoom.addEventListener('click', createRoom);
+            
+            btnJoinRoom.addEventListener('click', () => {
+                const code = joinRoomInput.value.trim();
+                if (code) joinRoom(code);
+            });
+
+            joinRoomInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const code = joinRoomInput.value.trim();
+                    if (code) joinRoom(code);
+                }
+            });
+
+            btnLeaveRoom.addEventListener('click', () => {
+                leaveRoom();
+                resetGame();
+            });
+
+            copyRoomCode.addEventListener('click', () => {
+                if (currentRoom) {
                     navigator.clipboard.writeText(currentRoom);
                     copyRoomCode.textContent = '✓ Copied!';
                     copyRoomCode.classList.add('copied');
                     setTimeout(() => {
-                        copyRoomCode.textContent = '📋 Copy Room Code';
+                        copyRoomCode.textContent = ' Copy Code';
                         copyRoomCode.classList.remove('copied');
                     }, 2000);
                 }
             });
 
-            copyRoomCode.addEventListener('click', () => {
-                navigator.clipboard.writeText(currentRoom);
-                copyRoomCode.textContent = '✓ Copied!';
-                copyRoomCode.classList.add('copied');
-                setTimeout(() => {
-                    copyRoomCode.textContent = '📋 Copy Room Code';
-                    copyRoomCode.classList.remove('copied');
-                }, 2000);
-            });
-
-            btnJoinRoom.addEventListener('click', () => {
-                const code = joinRoomCode.value.trim().toUpperCase();
-                if (code.length === 6) {
-                    joinRoom(code);
-                    joinRoomModal.classList.remove('show');
-                }
-            });
-
-            closeJoinModal.addEventListener('click', () => {
-                joinRoomModal.classList.remove('show');
-            });
-
-            // Close modals on escape
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    joinRoomModal.classList.remove('show');
                     winnerModal.classList.remove('show');
                     profileDropdown.classList.remove('show');
                 }
             });
 
-            // Initialize
             createStars();
             updateScoresDisplay();
             updateTurnIndicator();
@@ -1434,5 +1481,3 @@
     </script>
 </body>
 </html>
-
-
